@@ -150,8 +150,8 @@ This demonstrates practical DevOps skills:
 Perfect for job interviews and DevOps portfolios!
 
 ## Contact
-- LinkedIn: [Your LinkedIn]
-- Email: [Your Email]
+- LinkedIn: [www.linkedin.com/in/abayomi-olaniyan]
+- Email: [abayomiolaniyan17@gmail.com]
 
 ---
 ⭐ Star this repo if it helped you access Kubernetes Dashboard remotely!
