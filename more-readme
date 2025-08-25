@@ -1,0 +1,155 @@
+Minikube Testing and Deployment on Local Ubuntu Server
+This guide provides step-by-step instructions for setting up Minikube for testing and development purposes on a local Ubuntu server, helping you avoid AWS billing while learning Kubernetes.
+Prerequisites
+
+Ubuntu server (local machine)
+Docker installed
+Internet connection for downloading components
+Docker Hub account (for pushing images)
+
+Installation Steps
+1. Install kubectl
+Download and install kubectl:
+bash# Download kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+# Install kubectl
+sudo install -m 755 kubectl /usr/local/bin/kubectl
+2. Install Minikube
+Download and install Minikube:
+bash# Download Minikube
+curl -Lo minikube https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64 && chmod +x minikube
+
+# Move to system path
+sudo mv minikube /usr/local/bin
+
+# Alternative installation method
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+3. Start Minikube Cluster
+bash# Switch to root (if needed)
+sudo su
+
+# Start Minikube with none driver
+minikube start --vm-driver=none
+
+# Clean up downloaded file
+rm minikube-linux-amd64
+4. Verify Installation
+bash# Check cluster info
+kubectl cluster-info
+
+# Check Minikube status
+minikube status
+
+# If status shows 'stopped', restart with:
+# minikube start
+Creating and Deploying Your Application
+5. Prepare Application Files
+Create a directory for your project and add the following files:
+Dockerfile (Choose one option)
+Option A: Nginx
+dockerfile# Use the official Nginx image from Docker Hub
+FROM nginx:latest
+
+# Copy custom HTML file to the Nginx document root
+COPY index.html /usr/share/nginx/html/
+
+# Expose port 80 to allow traffic to the container
+EXPOSE 80
+Option B: Apache2/httpd
+dockerfile# Use the official httpd image as a base
+FROM httpd
+
+# Copy the index.html file to the httpd default directory
+COPY index.html /usr/local/apache2/htdocs/
+
+# The EXPOSE instruction indicates the ports on which a container listens for connections
+# By default, httpd listens on port 80
+EXPOSE 80
+index.html
+Create your custom HTML content in this file.
+6. Build and Push Docker Image
+bash# Login to Docker Hub (replace 'olaab' with your username)
+docker login -u olaab
+
+# Check current images
+docker images
+
+# Build your custom image
+docker build -t localubuntu-server-image .
+
+# Verify image creation
+docker images
+7. Create Kubernetes Deployment
+bash# Create deployment using nginx base image
+kubectl create deployment localubuntu-server-deploy --image nginx
+
+# Create service to expose the deployment
+kubectl expose deployment localubuntu-server-deploy --port 80
+8. Configure Service and Scaling
+bash# Edit service to change from ClusterIP to NodePort
+kubectl edit service localubuntu-server-deploy
+# Change: type: ClusterIP to type: NodePort
+
+# Edit deployment to scale replicas
+kubectl edit deployment localubuntu-server-deploy
+# Change: replicas: 1 to replicas: 3 (or your preferred number)
+9. Check Deployment Status
+bash# Get service information (note the NodePort)
+kubectl get service
+
+# Check pod status
+kubectl get pods
+10. Test Default Nginx
+Open your browser and navigate to:
+localhost:<NodePort>
+Replace <NodePort> with the port number shown in the kubectl get service output.
+11. Deploy Your Custom Image
+bash# Tag and push your custom image
+docker tag localubuntu-server-image olaab/localubuntu-server-image-container:v1.0
+docker push olaab/localubuntu-server-image-container:v1.0
+
+# Update deployment to use your custom image
+kubectl set image deployment/localubuntu-server-deploy nginx=olaab/localubuntu-server-image-container:v1.0
+12. Verify Custom Deployment
+Refresh your browser to see your custom index.html content displayed.
+Useful Commands
+Monitoring
+bash# Watch pods in real-time
+kubectl get pods -w
+
+# View deployment details
+kubectl describe deployment localubuntu-server-deploy
+
+# Check logs
+kubectl logs <pod-name>
+Cleanup
+bash# Delete deployment
+kubectl delete deployment localubuntu-server-deploy
+
+# Delete service
+kubectl delete service localubuntu-server-deploy
+
+# Stop Minikube
+minikube stop
+
+# Delete Minikube cluster
+minikube delete
+Troubleshooting
+
+Minikube status shows 'stopped': Run minikube start
+Pods stuck in 'ImagePullOff': Check if the image name and tag are correct
+Service not accessible: Verify the NodePort and ensure the service type is set to NodePort
+Permission issues: Ensure you're running commands with appropriate privileges
+
+Notes
+
+Pod names end with a random 5-character suffix for uniqueness
+The NodePort will be automatically assigned in the range 30000-32767
+Always verify the status of your pods using kubectl get pods before testing
+This setup is intended for development and testing purposes only
+
+Contributing
+Feel free to submit issues and enhancement requests!
+License
+All rights reserved. This project and its contents are proprietary and may not be reproduced, distributed, or used without explicit permission from the author.
